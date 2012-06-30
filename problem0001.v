@@ -53,4 +53,18 @@ induction n; intros.
    reflexivity.
 Qed.
 
-Extraction "problem0001.ml" f. (* Ans: f 1000 *)
+Variable bound : nat.
+
+Definition ans := f bound.
+
+Corollary ans_correct : spec bound ans.
+apply f_correct.
+reflexivity.
+Qed.
+
+Definition print_int (n:nat) : unit := tt.
+Definition main : unit := print_int ans.
+
+Extract Constant print_int => "print_int".
+Extract Constant bound => "1_000".
+Extraction "problem0001.ml" main.
