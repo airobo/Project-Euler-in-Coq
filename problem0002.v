@@ -101,62 +101,6 @@ destruct n.
 Qed.
 
 
-Fixpoint fib_fast_pre (a:nat) (b:nat) (n:nat) : nat :=
-  match n with
-  | O => a
-  | S n' => fib_fast_pre b (a+b) n'
-  end.
-Definition fib_fast := fib_fast_pre 1 2.
-
-
-Lemma fib_fast_pre_correct : forall a b n k,
-  fib n = a ->
-  fib (S n) = b ->
-  fib_fast_pre a b k = fib (k+n).
-Proof.
-intros a b n k; generalize dependent n; generalize dependent b;
- generalize dependent a.
-induction k; intros.
- simpl.
- symmetry ; assumption.
-
- simpl.
- remember (k + n) as kn.
- destruct kn.
-  destruct k.
-   destruct n.
-    subst; reflexivity.
-
-    inversion Heqkn.
-
-   inversion Heqkn.
-
-  assert (fib (S (S n)) = a + b).
-   rewrite <- fib_invariant.
-   congruence.
-
-   rewrite IHk with b (a + b) (S n).
-    replace (k + S n) with (S (k + n)) .
-     rewrite <- Heqkn.
-     rewrite fib_invariant.
-     reflexivity.
-
-     auto.
-
-    assumption.
-
-    assumption.
-Qed.
-
-
-Theorem fib_fast_correct : forall n, fib n = fib_fast n.
-Proof.
-intro n.
-unfold fib_fast.
-rewrite fib_fast_pre_correct with 1 2 0 n; auto.
-Qed.
-
-
 Lemma fib_geq1 : forall n, 0 < fib n.
 Proof.
 induction n; auto.
@@ -382,8 +326,64 @@ induction n; intros.
 Qed.
 
 
+Fixpoint fib_fast_pre (a:nat) (b:nat) (n:nat) : nat :=
+  match n with
+  | O => a
+  | S n' => fib_fast_pre b (a+b) n'
+  end.
+Definition fib_fast := fib_fast_pre 1 2.
+
+
+Lemma fib_fast_pre_correct : forall a b n k,
+  fib n = a ->
+  fib (S n) = b ->
+  fib_fast_pre a b k = fib (k+n).
+Proof.
+intros a b n k; generalize dependent n; generalize dependent b;
+ generalize dependent a.
+induction k; intros.
+ simpl.
+ symmetry ; assumption.
+
+ simpl.
+ remember (k + n) as kn.
+ destruct kn.
+  destruct k.
+   destruct n.
+    subst; reflexivity.
+
+    inversion Heqkn.
+
+   inversion Heqkn.
+
+  assert (fib (S (S n)) = a + b).
+   rewrite <- fib_invariant.
+   congruence.
+
+   rewrite IHk with b (a + b) (S n).
+    replace (k + S n) with (S (k + n)) .
+     rewrite <- Heqkn.
+     rewrite fib_invariant.
+     reflexivity.
+
+     auto.
+
+    assumption.
+
+    assumption.
+Qed.
+
+
+Theorem fib_fast_correct : forall n, fib n = fib_fast n.
+Proof.
+intro n.
+unfold fib_fast.
+rewrite fib_fast_pre_correct with 1 2 0 n; auto.
+Qed.
+
+
 Function f (acc:nat) (n:nat) {measure (fun n => S bound - fib n) n} : nat :=
-  let x := fib n in
+  let x := fib_fast n in
     if ble_nat bound x
     then acc
     else
@@ -395,6 +395,7 @@ apply sub_lt_sub.
  apply lt_le_weak.
  apply lt_n_S.
  apply ble_nat_false.
+ rewrite fib_fast_correct.
  assumption.
 
  apply fib_increase_S.
@@ -404,6 +405,7 @@ apply sub_lt_sub.
  apply lt_le_weak.
  apply lt_n_S.
  apply ble_nat_false.
+ rewrite fib_fast_correct.
  assumption.
 
  apply fib_increase_S.
@@ -415,6 +417,7 @@ apply (f_ind (fun acc n m => spec_sub n acc -> spec m)); intros.
  unfold spec; intros.
  apply spec_sub_inv with n.
   apply ble_nat_true.
+  rewrite fib_fast_correct.
   assumption.
 
   auto with arith.
@@ -422,13 +425,17 @@ apply (f_ind (fun acc n m => spec_sub n acc -> spec m)); intros.
   assumption.
 
  apply H.
+ subst x.
+ rewrite<- fib_fast_correct.
  constructor.
   assumption.
 
   apply beq_nat_true.
+  rewrite fib_fast_correct.
   assumption.
 
   apply ble_nat_false.
+  rewrite fib_fast_correct.
   assumption.
 
  apply H.
@@ -436,9 +443,11 @@ apply (f_ind (fun acc n m => spec_sub n acc -> spec m)); intros.
   assumption.
 
   apply beq_nat_false.
+  rewrite fib_fast_correct.
   assumption.
 
   apply ble_nat_false.
+  rewrite fib_fast_correct.
   assumption.
 Qed.
 
